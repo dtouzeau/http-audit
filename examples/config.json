@@ -1,0 +1,62 @@
+{
+  "target": {
+    "url": "https://www.articatech.com",
+    "method": "GET",
+    "headers": {
+      "Accept": "application/json"
+    },
+    "body": ""
+  },
+  "network": {
+    "interface": "",
+    "timeout_connect": "10s",
+    "timeout_read": "30s",
+    "timeout_total": "60s"
+  },
+  "dns": {
+    "enabled": true,
+    "servers": [],
+    "expect_ips": []
+  },
+  "proxy": {
+    "enabled": false,
+    "url": "",
+    "auth": {
+      "type": "none",
+      "username": "",
+      "password": ""
+    }
+  },
+  "auth": {
+    "type": "none",
+    "basic": {
+      "username": "",
+      "password": ""
+    },
+    "kerberos": {
+      "username": "",
+      "password": "",
+      "kdc_server": "",
+      "realm": "",
+      "keytab_path": "",
+      "generate_keytab": false,
+      "service_name": "HTTP"
+    }
+  },
+  "ssl": {
+    "verify": true,
+    "check_protocols": true,
+    "check_ciphers": false,
+    "min_version": "TLS1.2"
+  },
+  "http": {
+    "user_agent": "http-audit/1.0",
+    "follow_redirects": true,
+    "max_redirects": 10
+  },
+  "output": {
+    "html_path": "./report.html",
+    "json_path": "./report.json",
+    "chartjs_url": "https://cdn.jsdelivr.net/npm/chart.js"
+  }
+}

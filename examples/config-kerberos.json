@@ -1,0 +1,60 @@
+{
+  "target": {
+    "url": "https://www.articatech.com",
+    "method": "GET",
+    "headers": {},
+    "body": ""
+  },
+  "network": {
+    "interface": "eth0",
+    "timeout_connect": "10s",
+    "timeout_read": "30s",
+    "timeout_total": "90s"
+  },
+  "dns": {
+    "enabled": true,
+    "servers": ["10.0.0.1", "10.0.0.2"],
+    "expect_ips": ["192.168.1.100"]
+  },
+  "proxy": {
+    "enabled": false,
+    "url": "",
+    "auth": {
+      "type": "none",
+      "username": "",
+      "password": ""
+    }
+  },
+  "auth": {
+    "type": "kerberos",
+    "basic": {
+      "username": "",
+      "password": ""
+    },
+    "kerberos": {
+      "username": "svc-audit@EXAMPLE.COM",
+      "password": "service-password",
+      "kdc_server": "kdc.example.com",
+      "realm": "EXAMPLE.COM",
+      "keytab_path": "/tmp/svc-audit.keytab",
+      "generate_keytab": true,
+      "service_name": "HTTP"
+    }
+  },
+  "ssl": {
+    "verify": true,
+    "check_protocols": true,
+    "check_ciphers": false,
+    "min_version": "TLS1.2"
+  },
+  "http": {
+    "user_agent": "http-audit/1.0 (Kerberos)",
+    "follow_redirects": true,
+    "max_redirects": 10
+  },
+  "output": {
+    "html_path": "./report-kerberos.html",
+    "json_path": "./report-kerberos.json",
+    "chartjs_url": "https://cdn.jsdelivr.net/npm/chart.js"
+  }
+}

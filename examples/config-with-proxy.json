@@ -1,0 +1,60 @@
+{
+  "target": {
+    "url": "https://www.articatech.com",
+    "method": "GET",
+    "headers": {},
+    "body": ""
+  },
+  "network": {
+    "interface": "",
+    "timeout_connect": "15s",
+    "timeout_read": "30s",
+    "timeout_total": "60s"
+  },
+  "dns": {
+    "enabled": true,
+    "servers": ["10.0.0.1"],
+    "expect_ips": []
+  },
+  "proxy": {
+    "enabled": true,
+    "url": "http://proxy.example.com:8080",
+    "auth": {
+      "type": "basic",
+      "username": "proxyuser",
+      "password": "proxypassword"
+    }
+  },
+  "auth": {
+    "type": "basic",
+    "basic": {
+      "username": "apiuser",
+      "password": "apipassword"
+    },
+    "kerberos": {
+      "username": "",
+      "password": "",
+      "kdc_server": "",
+      "realm": "",
+      "keytab_path": "",
+      "generate_keytab": false,
+      "service_name": "HTTP"
+    }
+  },
+  "ssl": {
+    "verify": true,
+    "check_protocols": true,
+    "check_ciphers": false,
+    "min_version": "TLS1.2"
+  },
+  "http": {
+    "user_agent": "http-audit/1.0",
+    "follow_redirects": true,
+    "max_redirects": 5
+  },
+  "output": {
+    "html_path": "./report-proxy.html",
+    "json_path": "./report-proxy.json",
+    "chartjs_url": "https://cdn.jsdelivr.net/npm/chart.js"
+  }
+}
