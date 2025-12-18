@@ -1,6 +1,6 @@
 {
   "target": {
-    "url": "https://www.articatech.com",
+    "url": "https://intranet.example.com/api/secure",
     "method": "GET",
     "headers": {},
     "body": ""

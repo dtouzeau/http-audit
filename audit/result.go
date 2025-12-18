@@ -44,16 +44,27 @@ type KeytabResult struct {
 	GeneratedAt time.Time `json:"generated_at,omitempty"`
 }
 
-// DNSResult contains DNS resolution results
-type DNSResult struct {
+// DNSServerResult contains results from a single DNS server query
+type DNSServerResult struct {
+	Server      string   `json:"server"`
 	Success     bool     `json:"success"`
-	Hostname    string   `json:"hostname"`
-	ResolvedIPs []string `json:"resolved_ips"`
-	ExpectedIPs []string `json:"expected_ips,omitempty"`
-	IPsMatch    bool     `json:"ips_match"`
-	ServerUsed  string   `json:"server_used,omitempty"`
+	ResolvedIPs []string `json:"resolved_ips,omitempty"`
 	Duration    Duration `json:"duration"`
 	Error       string   `json:"error,omitempty"`
+}
+
+// DNSResult contains DNS resolution results
+type DNSResult struct {
+	Success       bool              `json:"success"`
+	Hostname      string            `json:"hostname"`
+	ResolvedIPs   []string          `json:"resolved_ips"`
+	ExpectedIPs   []string          `json:"expected_ips,omitempty"`
+	IPsMatch      bool              `json:"ips_match"`
+	ServerUsed    string            `json:"server_used,omitempty"`
+	Duration      Duration          `json:"duration"`
+	Error         string            `json:"error,omitempty"`
+	ServerResults []DNSServerResult `json:"server_results,omitempty"`
+	FastestServer string            `json:"fastest_server,omitempty"`
 }
 
 // SSLResult contains SSL/TLS analysis results

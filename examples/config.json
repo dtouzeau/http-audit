@@ -1,6 +1,6 @@
 {
   "target": {
-    "url": "https://www.articatech.com",
+    "url": "https://example.com/api/health",
     "method": "GET",
     "headers": {
       "Accept": "application/json"
@@ -16,7 +16,9 @@
   "dns": {
     "enabled": true,
     "servers": [],
-    "expect_ips": []
+    "expect_ips": [],
+    "timeout": "2s",
+    "test_all_servers": false
   },
   "proxy": {
     "enabled": false,

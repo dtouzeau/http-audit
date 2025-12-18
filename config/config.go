@@ -85,9 +85,11 @@ type NetworkConfig struct {
 
 // DNSConfig defines DNS resolution settings
 type DNSConfig struct {
-	Enabled   bool     `json:"enabled"`
-	Servers   []string `json:"servers"`
-	ExpectIPs []string `json:"expect_ips"`
+	Enabled        bool     `json:"enabled"`
+	Servers        []string `json:"servers"`
+	ExpectIPs      []string `json:"expect_ips"`
+	Timeout        Duration `json:"timeout"`
+	TestAllServers bool     `json:"test_all_servers"`
 }
 
 // ProxyConfig defines HTTP proxy settings
@@ -188,6 +190,9 @@ func (c *Config) SetDefaults() {
 	}
 	if c.Network.TimeoutTotal.Duration == 0 {
 		c.Network.TimeoutTotal.Duration = 60 * time.Second
+	}
+	if c.DNS.Timeout.Duration == 0 {
+		c.DNS.Timeout.Duration = 2 * time.Second // Low timeout for fast DNS testing
 	}
 	if c.HTTP.UserAgent == "" {
 		c.HTTP.UserAgent = "http-audit/1.0"

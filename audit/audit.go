@@ -119,19 +119,39 @@ func (a *Auditor) Run(ctx context.Context) *Result {
 
 	// Step 3: DNS Resolution (skip if proxy is enabled - proxy handles DNS)
 	if a.cfg.DNS.Enabled && !a.cfg.Proxy.Enabled {
-		fmt.Println("Performing DNS resolution...")
-		dnsCtx, dnsCancel := context.WithTimeout(ctx, a.cfg.Network.TimeoutConnect.Duration)
-		result.DNS = a.dnsAuditor.Audit(dnsCtx)
-		dnsCancel()
+		// Use multi-server audit if TestAllServers is enabled or multiple servers configured
+		if a.cfg.DNS.TestAllServers || len(a.cfg.DNS.Servers) > 1 {
+			fmt.Printf("Testing DNS resolution across %d server(s)...\n", len(a.cfg.DNS.Servers))
+			dnsCtx, dnsCancel := context.WithTimeout(ctx, a.cfg.DNS.Timeout.Duration*time.Duration(len(a.cfg.DNS.Servers)+1))
+			result.DNS = a.dnsAuditor.AuditAllServers(dnsCtx)
+			dnsCancel()
+
+			// Print results for each server
+			for _, sr := range result.DNS.ServerResults {
+				if sr.Success {
+					fmt.Printf("  ✓ %s: %v (%.2fms)\n", sr.Server, sr.ResolvedIPs, sr.Duration.Milliseconds())
+				} else {
+					fmt.Printf("  ✗ %s: %s\n", sr.Server, sr.Error)
+				}
+			}
+			if result.DNS.FastestServer != "" {
+				fmt.Printf("Fastest DNS: %s\n", result.DNS.FastestServer)
+			}
+		} else {
+			fmt.Println("Performing DNS resolution...")
+			dnsCtx, dnsCancel := context.WithTimeout(ctx, a.cfg.DNS.Timeout.Duration)
+			result.DNS = a.dnsAuditor.Audit(dnsCtx)
+			dnsCancel()
+
+			if result.DNS.Success {
+				fmt.Printf("DNS resolved %s to %v in %v\n",
+					result.DNS.Hostname, result.DNS.ResolvedIPs, result.DNS.Duration.Duration)
+			} else {
+				fmt.Printf("DNS resolution failed: %s\n", result.DNS.Error)
+			}
+		}
 
 		result.Timings.DNSLookup = result.DNS.Duration
-
-		if result.DNS.Success {
-			fmt.Printf("DNS resolved %s to %v in %v\n",
-				result.DNS.Hostname, result.DNS.ResolvedIPs, result.DNS.Duration.Duration)
-		} else {
-			fmt.Printf("DNS resolution failed: %s\n", result.DNS.Error)
-		}
 	}
 
 	// Step 4: SSL/TLS Analysis (only for HTTPS)
