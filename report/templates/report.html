@@ -664,6 +664,7 @@
         new Chart(timingCtx, {
             type: 'bar',
             data: {
+                {{if .SSL}}
                 labels: ['DNS Lookup', 'TCP Connect', 'TLS Handshake', 'First Byte', 'Content Read'],
                 datasets: [{
                     label: 'Duration (ms)',
@@ -690,6 +691,31 @@
                     ],
                     borderWidth: 1
                 }]
+                {{else}}
+                labels: ['DNS Lookup', 'TCP Connect', 'First Byte', 'Content Read'],
+                datasets: [{
+                    label: 'Duration (ms)',
+                    data: [
+                        {{printf "%.2f" .Timings.DNSLookup.Milliseconds}},
+                        {{printf "%.2f" .Timings.TCPConnect.Milliseconds}},
+                        {{printf "%.2f" .Timings.FirstByte.Milliseconds}},
+                        {{printf "%.2f" .Timings.ContentRead.Milliseconds}}
+                    ],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(236, 72, 153, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(16, 185, 129, 1)',
+                        'rgba(139, 92, 246, 1)',
+                        'rgba(236, 72, 153, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+                {{end}}
             },
             options: {
                 indexAxis: 'y',
