@@ -1,6 +1,8 @@
 package audit
 
 import (
+	"compress/gzip"
+	"compress/zlib"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -11,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"http-audit/auth"
 	"http-audit/config"
 	"http-audit/network"
@@ -212,9 +215,36 @@ func (a *HTTPAuditor) Audit(ctx context.Context) (*HTTPResult, *TimingResult) {
 	}
 	defer resp.Body.Close()
 
-	// Read response body
+	// Read response body (with decompression if needed)
 	bodyStart := time.Now()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodySize))
+	var respBodyReader io.Reader = resp.Body
+
+	// Handle Content-Encoding
+	contentEncoding := strings.ToLower(resp.Header.Get("Content-Encoding"))
+	switch contentEncoding {
+	case "gzip":
+		gzReader, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Sprintf("failed to create gzip reader: %v", err)
+			return result, timings
+		}
+		defer gzReader.Close()
+		respBodyReader = gzReader
+	case "deflate":
+		zlibReader, err := zlib.NewReader(resp.Body)
+		if err != nil {
+			result.Success = false
+			result.Error = fmt.Sprintf("failed to create deflate reader: %v", err)
+			return result, timings
+		}
+		defer zlibReader.Close()
+		respBodyReader = zlibReader
+	case "br":
+		respBodyReader = brotli.NewReader(resp.Body)
+	}
+
+	body, err := io.ReadAll(io.LimitReader(respBodyReader, maxBodySize))
 	bodyEnd := time.Now()
 
 	if err != nil {
