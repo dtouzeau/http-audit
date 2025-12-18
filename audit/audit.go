@@ -63,7 +63,6 @@ func NewAuditor(cfg *config.Config) (*Auditor, error) {
 // Run executes the complete audit process
 func (a *Auditor) Run(ctx context.Context) *Result {
 	result := NewResult(a.cfg.Target.URL)
-	overallStart := time.Now()
 
 	// Step 1: Generate keytab if needed
 	if a.cfg.Auth.Type == "kerberos" && a.cfg.Auth.Kerberos.GenerateKeytab {
@@ -205,10 +204,25 @@ func (a *Auditor) Run(ctx context.Context) *Result {
 	}
 	result.Timings.FirstByte = httpTimings.FirstByte
 	result.Timings.ContentRead = httpTimings.ContentRead
-	result.Timings.Total = Duration{time.Since(overallStart)}
+	// Total time is HTTP request time only (not including DNS multi-server tests)
+	result.Timings.Total = httpTimings.Total
 
 	if httpResult.Success {
 		fmt.Printf("HTTP %s %d in %v\n", httpResult.Proto, httpResult.StatusCode, httpTimings.Total.Duration)
+
+		// If HTTP redirected to HTTPS (initial URL was HTTP but final used TLS), populate SSL info
+		if !a.cfg.IsHTTPS() && httpResult.UsedTLS {
+			fmt.Printf("Redirected to HTTPS - %s using %s\n", httpResult.TLSVersion, httpResult.TLSCipherSuite)
+			// Create minimal SSL result from HTTP TLS state
+			if result.SSL == nil {
+				result.SSL = &SSLResult{
+					Success:     true,
+					Connected:   true,
+					Protocol:    httpResult.TLSVersion,
+					CipherSuite: httpResult.TLSCipherSuite,
+				}
+			}
+		}
 	} else {
 		fmt.Printf("HTTP request failed: %s\n", httpResult.Error)
 	}

@@ -237,6 +237,13 @@ func (a *HTTPAuditor) Audit(ctx context.Context) (*HTTPResult, *TimingResult) {
 	result.Redirects = redirects
 	result.RedirectCount = len(redirects)
 
+	// Capture TLS state if connection used HTTPS
+	if resp.TLS != nil {
+		result.UsedTLS = true
+		result.TLSVersion = tlsVersionName(resp.TLS.Version)
+		result.TLSCipherSuite = tls.CipherSuiteName(resp.TLS.CipherSuite)
+	}
+
 	// Response headers
 	for key, values := range resp.Header {
 		result.Headers[key] = strings.Join(values, ", ")
@@ -341,4 +348,20 @@ func (a *HTTPAuditor) calculateTimings(
 		timings.FirstByte = Duration{firstByteTime.Sub(requestStart)}
 	}
 	timings.Total = Duration{endTime.Sub(requestStart)}
+}
+
+// tlsVersionName returns a human-readable TLS version name
+func tlsVersionName(version uint16) string {
+	switch version {
+	case tls.VersionTLS10:
+		return "TLS 1.0"
+	case tls.VersionTLS11:
+		return "TLS 1.1"
+	case tls.VersionTLS12:
+		return "TLS 1.2"
+	case tls.VersionTLS13:
+		return "TLS 1.3"
+	default:
+		return fmt.Sprintf("Unknown (0x%04x)", version)
+	}
 }

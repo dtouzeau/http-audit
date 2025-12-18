@@ -111,6 +111,9 @@ type HTTPResult struct {
 	Headers        map[string]string `json:"headers"`
 	ContentLength  int64             `json:"content_length"`
 	ContentType    string            `json:"content_type"`
+	UsedTLS        bool              `json:"used_tls"`
+	TLSVersion     string            `json:"tls_version,omitempty"`
+	TLSCipherSuite string            `json:"tls_cipher_suite,omitempty"`
 	Body           string            `json:"body,omitempty"`
 	BodyTruncated  bool              `json:"body_truncated"`
 	Redirects      []RedirectInfo    `json:"redirects,omitempty"`

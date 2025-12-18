@@ -414,7 +414,7 @@
                         </tr>
                         <tr>
                             <th>DNS Server</th>
-                            <td>{{.DNS.ServerUsed}}</td>
+                            <td>{{.DNS.ServerUsed}}{{if .DNS.FastestServer}} <span class="tag tag-success">Fastest: {{.DNS.FastestServer}}</span>{{end}}</td>
                         </tr>
                         <tr>
                             <th>Duration</th>
@@ -440,6 +440,51 @@
                         </tr>
                         {{end}}
                     </table>
+
+                    {{if .DNS.ServerResults}}
+                    <!-- DNS Server Comparison -->
+                    <div style="margin-top: 1.5rem;">
+                        <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">DNS Server Comparison ({{len .DNS.ServerResults}} servers)</h3>
+                        <div class="chart-container" style="height: 200px; margin-bottom: 1rem;">
+                            <canvas id="dnsChart"></canvas>
+                        </div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>DNS Server</th>
+                                    <th>Status</th>
+                                    <th>Response Time</th>
+                                    <th>Resolved IPs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range $i, $sr := .DNS.ServerResults}}
+                                <tr>
+                                    <td>
+                                        {{$sr.Server}}
+                                        {{if eq $sr.Server $.DNS.FastestServer}}<span class="tag tag-success" style="margin-left: 0.5rem;">Fastest</span>{{end}}
+                                    </td>
+                                    <td>
+                                        {{if $sr.Success}}
+                                        <span class="tag tag-success">Success</span>
+                                        {{else}}
+                                        <span class="tag tag-error">Failed</span>
+                                        {{end}}
+                                    </td>
+                                    <td>{{printf "%.2f" $sr.Duration.Milliseconds}}ms</td>
+                                    <td>
+                                        {{if $sr.Success}}
+                                        {{range $j, $ip := $sr.ResolvedIPs}}{{if $j}}, {{end}}{{$ip}}{{end}}
+                                        {{else}}
+                                        <span style="color: var(--error-color)">{{$sr.Error}}</span>
+                                        {{end}}
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{end}}
                 </div>
             </div>
             {{end}}
@@ -736,6 +781,50 @@
                 }
             }
         });
+
+        {{if and .DNS .DNS.ServerResults}}
+        // DNS Server Comparison Chart
+        const dnsCtx = document.getElementById('dnsChart').getContext('2d');
+        new Chart(dnsCtx, {
+            type: 'bar',
+            data: {
+                labels: [{{range $i, $sr := .DNS.ServerResults}}{{if $i}}, {{end}}'{{$sr.Server}}'{{end}}],
+                datasets: [{
+                    label: 'Response Time (ms)',
+                    data: [{{range $i, $sr := .DNS.ServerResults}}{{if $i}}, {{end}}{{printf "%.2f" $sr.Duration.Milliseconds}}{{end}}],
+                    backgroundColor: [{{range $i, $sr := .DNS.ServerResults}}{{if $i}}, {{end}}{{if $sr.Success}}'rgba(16, 185, 129, 0.8)'{{else}}'rgba(239, 68, 68, 0.8)'{{end}}{{end}}],
+                    borderColor: [{{range $i, $sr := .DNS.ServerResults}}{{if $i}}, {{end}}{{if $sr.Success}}'rgba(16, 185, 129, 1)'{{else}}'rgba(239, 68, 68, 1)'{{end}}{{end}}],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.x.toFixed(2) + ' ms';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Response Time (ms)'
+                        }
+                    }
+                }
+            }
+        });
+        {{end}}
 
         {{if and .SSL .SSL.SupportedVersions}}
         // TLS Version Support Chart
