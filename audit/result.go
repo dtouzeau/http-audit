@@ -14,10 +14,23 @@ type Result struct {
 	Error     string         `json:"error,omitempty"`
 	Keytab    *KeytabResult  `json:"keytab,omitempty"`
 	DNS       *DNSResult     `json:"dns,omitempty"`
+	Proxy     *ProxyResult   `json:"proxy,omitempty"`
 	SSL       *SSLResult     `json:"ssl,omitempty"`
 	HTTP      *HTTPResult    `json:"http,omitempty"`
 	Timings   *TimingResult  `json:"timings"`
 	Summary   *SummaryResult `json:"summary"`
+}
+
+// ProxyResult contains proxy communication details
+type ProxyResult struct {
+	Enabled        bool              `json:"enabled"`
+	URL            string            `json:"url"`
+	Host           string            `json:"host"`
+	Port           string            `json:"port"`
+	AuthType       string            `json:"auth_type,omitempty"`
+	ConnectStatus  int               `json:"connect_status,omitempty"`
+	ConnectHeaders map[string]string `json:"connect_headers,omitempty"`
+	Error          string            `json:"error,omitempty"`
 }
 
 // KeytabResult contains keytab generation results

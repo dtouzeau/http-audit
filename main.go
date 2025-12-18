@@ -17,6 +17,8 @@ func main() {
 	// Parse command-line flags
 	configPath := flag.String("config", "config.json", "Path to JSON configuration file")
 	showVersion := flag.Bool("version", false, "Show version information")
+	targetURL := flag.String("url", "", "Override target URL from config")
+	networkInterface := flag.String("interface", "", "Override network interface from config")
 	flag.Parse()
 
 	if *showVersion {
@@ -29,6 +31,14 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading configuration: %v\n", err)
 		os.Exit(1)
+	}
+
+	// Apply CLI overrides
+	if *targetURL != "" {
+		cfg.Target.URL = *targetURL
+	}
+	if *networkInterface != "" {
+		cfg.Network.Interface = *networkInterface
 	}
 
 	fmt.Println("===========================================")

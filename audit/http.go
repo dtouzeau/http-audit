@@ -110,6 +110,15 @@ func (a *HTTPAuditor) Audit(ctx context.Context) (*HTTPResult, *TimingResult) {
 
 	// Set headers
 	req.Header.Set("User-Agent", a.cfg.HTTP.UserAgent)
+	req.Header.Set("Accept-Language", a.cfg.HTTP.AcceptLanguage)
+	req.Header.Set("Accept-Encoding", a.cfg.HTTP.AcceptEncoding)
+	req.Header.Set("Connection", a.cfg.HTTP.Connection)
+	if a.cfg.HTTP.Referer != "" {
+		req.Header.Set("Referer", a.cfg.HTTP.Referer)
+	}
+	if a.cfg.HTTP.XForwardedFor != "" {
+		req.Header.Set("X-Forwarded-For", a.cfg.HTTP.XForwardedFor)
+	}
 	for key, value := range a.cfg.Target.Headers {
 		req.Header.Set(key, value)
 	}

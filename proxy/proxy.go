@@ -134,3 +134,34 @@ func (p *ProxyConfig) GetInfo() ProxyInfo {
 
 	return info
 }
+
+// GetHost returns the proxy hostname
+func (p *ProxyConfig) GetHost() string {
+	if p.proxyURL == nil {
+		return ""
+	}
+	return p.proxyURL.Hostname()
+}
+
+// GetPort returns the proxy port
+func (p *ProxyConfig) GetPort() string {
+	if p.proxyURL == nil {
+		return ""
+	}
+	port := p.proxyURL.Port()
+	if port == "" {
+		if p.proxyURL.Scheme == "https" {
+			return "443"
+		}
+		return "8080"
+	}
+	return port
+}
+
+// GetAuthType returns the authentication type
+func (p *ProxyConfig) GetAuthType() string {
+	if p.auth == nil {
+		return "none"
+	}
+	return p.auth.authType
+}

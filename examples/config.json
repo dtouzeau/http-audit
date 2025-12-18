@@ -52,7 +52,12 @@
   "http": {
     "user_agent": "http-audit/1.0",
     "follow_redirects": true,
-    "max_redirects": 10
+    "max_redirects": 10,
+    "accept_language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3",
+    "accept_encoding": "gzip, deflate, br",
+    "connection": "keep-alive",
+    "referer": "",
+    "x_forwarded_for": ""
   },
   "output": {
     "html_path": "./report.html",

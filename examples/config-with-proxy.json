@@ -1,6 +1,6 @@
 {
   "target": {
-    "url": "https://www.articatech.com",
+    "url": "https://internal.example.com/api/status",
     "method": "GET",
     "headers": {},
     "body": ""

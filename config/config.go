@@ -123,6 +123,11 @@ type HTTPConfig struct {
 	UserAgent       string `json:"user_agent"`
 	FollowRedirects bool   `json:"follow_redirects"`
 	MaxRedirects    int    `json:"max_redirects"`
+	AcceptLanguage  string `json:"accept_language"`
+	AcceptEncoding  string `json:"accept_encoding"`
+	Connection      string `json:"connection"`
+	Referer         string `json:"referer"`
+	XForwardedFor   string `json:"x_forwarded_for"`
 }
 
 // OutputConfig defines report output paths
@@ -171,6 +176,15 @@ func (c *Config) SetDefaults() {
 	}
 	if c.HTTP.MaxRedirects == 0 {
 		c.HTTP.MaxRedirects = 10
+	}
+	if c.HTTP.AcceptLanguage == "" {
+		c.HTTP.AcceptLanguage = "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3"
+	}
+	if c.HTTP.AcceptEncoding == "" {
+		c.HTTP.AcceptEncoding = "gzip, deflate, br"
+	}
+	if c.HTTP.Connection == "" {
+		c.HTTP.Connection = "keep-alive"
 	}
 	if c.SSL.MinVersion == "" {
 		c.SSL.MinVersion = "TLS1.2"

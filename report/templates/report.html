@@ -290,6 +290,9 @@
             <p class="subtitle">
                 <strong>Target:</strong> {{.TargetURL}} |
                 <strong>Generated:</strong> {{.Timestamp.Format "2006-01-02 15:04:05 MST"}}
+                {{if and .Proxy .Proxy.Enabled}}
+                <br><strong>Proxy:</strong> {{.Proxy.URL}}{{if .Proxy.AuthType}} ({{.Proxy.AuthType}} auth){{end}}
+                {{end}}
             </p>
         </header>
 
@@ -347,6 +350,49 @@
         </div>
 
         <div class="grid grid-2">
+            {{if and .Proxy .Proxy.Enabled}}
+            <!-- Proxy Results -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Proxy Configuration</h2>
+                    <span class="tag tag-info">Enabled</span>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>Proxy URL</th>
+                            <td>{{.Proxy.URL}}</td>
+                        </tr>
+                        <tr>
+                            <th>Host</th>
+                            <td>{{.Proxy.Host}}</td>
+                        </tr>
+                        <tr>
+                            <th>Port</th>
+                            <td>{{.Proxy.Port}}</td>
+                        </tr>
+                        <tr>
+                            <th>Authentication</th>
+                            <td>{{if eq .Proxy.AuthType "none"}}None{{else}}{{.Proxy.AuthType}}{{end}}</td>
+                        </tr>
+                        {{if .Proxy.Error}}
+                        <tr>
+                            <th>Error</th>
+                            <td style="color: var(--error-color)">{{.Proxy.Error}}</td>
+                        </tr>
+                        {{end}}
+                    </table>
+                    {{if .Proxy.ConnectHeaders}}
+                    <div style="margin-top: 1rem;">
+                        <h3 style="font-size: 0.875rem; margin-bottom: 0.5rem;">Proxy Headers</h3>
+                        <div class="code-block" style="max-height: 150px; overflow-y: auto;">{{range $key, $value := .Proxy.ConnectHeaders}}{{$key}}: {{$value}}
+{{end}}</div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+
             {{if .DNS}}
             <!-- DNS Results -->
             <div class="card">

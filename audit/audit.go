@@ -104,8 +104,21 @@ func (a *Auditor) Run(ctx context.Context) *Result {
 		defer kerberosAuth.Close()
 	}
 
-	// Step 2: DNS Resolution
-	if a.cfg.DNS.Enabled {
+	// Step 2: Proxy info (if enabled)
+	if a.cfg.Proxy.Enabled {
+		result.Proxy = &ProxyResult{
+			Enabled:  true,
+			URL:      a.cfg.Proxy.URL,
+			Host:     a.proxyConfig.GetHost(),
+			Port:     a.proxyConfig.GetPort(),
+			AuthType: a.proxyConfig.GetAuthType(),
+		}
+		fmt.Printf("Using proxy: %s\n", a.cfg.Proxy.URL)
+		fmt.Println("DNS resolution skipped (proxy handles DNS)")
+	}
+
+	// Step 3: DNS Resolution (skip if proxy is enabled - proxy handles DNS)
+	if a.cfg.DNS.Enabled && !a.cfg.Proxy.Enabled {
 		fmt.Println("Performing DNS resolution...")
 		dnsCtx, dnsCancel := context.WithTimeout(ctx, a.cfg.Network.TimeoutConnect.Duration)
 		result.DNS = a.dnsAuditor.Audit(dnsCtx)
@@ -121,7 +134,7 @@ func (a *Auditor) Run(ctx context.Context) *Result {
 		}
 	}
 
-	// Step 3: SSL/TLS Analysis (only for HTTPS)
+	// Step 4: SSL/TLS Analysis (only for HTTPS)
 	if a.cfg.IsHTTPS() {
 		fmt.Println("Analyzing SSL/TLS...")
 		sslCtx, sslCancel := context.WithTimeout(ctx, a.cfg.Network.TimeoutConnect.Duration*2)
@@ -141,13 +154,24 @@ func (a *Auditor) Run(ctx context.Context) *Result {
 		}
 	}
 
-	// Step 4: HTTP Request
+	// Step 5: HTTP Request
 	fmt.Println("Executing HTTP request...")
 	httpCtx, httpCancel := context.WithTimeout(ctx, a.cfg.Network.TimeoutTotal.Duration)
 	httpResult, httpTimings := a.httpAuditor.Audit(httpCtx)
 	httpCancel()
 
 	result.HTTP = httpResult
+
+	// Capture proxy-related headers if proxy is enabled
+	if result.Proxy != nil && httpResult.Success {
+		result.Proxy.ConnectHeaders = make(map[string]string)
+		// Extract proxy-related headers from response
+		for key, value := range httpResult.Headers {
+			if isProxyHeader(key) {
+				result.Proxy.ConnectHeaders[key] = value
+			}
+		}
+	}
 
 	// Merge timings (HTTP timings may override DNS/TLS if they were measured during HTTP request)
 	if httpTimings.DNSLookup.Duration > 0 {
@@ -189,4 +213,28 @@ func (a *Auditor) GetProxyInfo() proxy.ProxyInfo {
 		return proxy.ProxyInfo{Enabled: false}
 	}
 	return a.proxyConfig.GetInfo()
+}
+
+// isProxyHeader checks if a header is proxy-related
+func isProxyHeader(key string) bool {
+	proxyHeaders := []string{
+		"Proxy-Connection",
+		"Proxy-Authenticate",
+		"Proxy-Authorization",
+		"Via",
+		"X-Forwarded-For",
+		"X-Forwarded-Host",
+		"X-Forwarded-Proto",
+		"X-Real-IP",
+		"X-Proxy-ID",
+		"X-Cache",
+		"X-Cache-Lookup",
+		"X-Squid-Error",
+	}
+	for _, h := range proxyHeaders {
+		if key == h {
+			return true
+		}
+	}
+	return false
 }

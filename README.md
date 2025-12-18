@@ -47,7 +47,7 @@ It provides detailed analysis of DNS resolution, SSL/TLS certificates, HTTP resp
 3. View the generated HTML report in your browser.
 
 ## Usage
-
+### -config
 ```bash
 # Run with configuration file
 ./http-audit -config config.json
@@ -55,6 +55,31 @@ It provides detailed analysis of DNS resolution, SSL/TLS certificates, HTTP resp
 # Show version
 ./http-audit -version
 ```
+### -url
+
+Overrides the `target.url` value from the configuration file. 
+Useful for running the same configuration against different endpoints without modifying the config file.
+
+```bash
+# Override URL
+./http-audit -config config.json -url https://wiki.articatech.com
+```
+### -interface
+
+Overrides the `network.interface` value from the configuration file. Binds outgoing connections to a specific network interface.
+
+```bash
+# Bind to specific interface
+./http-audit -config config.json -interface eth0
+```
+
+### Combined Overrides
+
+```bash
+# Override both URL and interface
+./http-audit -config config.json -url http://articatech.net -interface eth1
+```
+
 ### Example Configurations
 
 - `examples/config.json` - Basic HTTPS audit
