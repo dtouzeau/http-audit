@@ -227,10 +227,42 @@ func (a *Auditor) Run(ctx context.Context) *Result {
 		fmt.Printf("HTTP request failed: %s\n", httpResult.Error)
 	}
 
+	// Step 6: Page Analysis (if enabled and HTTP was successful)
+	if a.cfg.PageAnalysis.Enabled && httpResult.Success && httpResult.Body != "" {
+		fmt.Println("Analyzing page resources...")
+		pageAnalyzer, err := NewPageAnalyzer(a.cfg, httpResult.FinalURL)
+		if err != nil {
+			fmt.Printf("Page analysis setup failed: %s\n", err)
+		} else {
+			pageCtx, pageCancel := context.WithTimeout(ctx, a.cfg.PageAnalysis.Timeout.Duration*time.Duration(a.cfg.PageAnalysis.MaxRequests/10+1))
+			result.PageAnalysis = pageAnalyzer.Analyze(pageCtx, httpResult.Body)
+			pageCancel()
+
+			fmt.Printf("Page resources: %d total, %d success, %d failed (%.2fms)\n",
+				result.PageAnalysis.TotalResources,
+				result.PageAnalysis.SuccessCount,
+				result.PageAnalysis.FailedCount,
+				result.PageAnalysis.TotalDuration.Milliseconds())
+			if result.PageAnalysis.SlowestURL != "" {
+				fmt.Printf("Slowest resource: %s (%.2fms)\n",
+					truncateURL(result.PageAnalysis.SlowestURL, 60),
+					result.PageAnalysis.SlowestTime.Milliseconds())
+			}
+		}
+	}
+
 	// Calculate summary
 	result.CalculateSummary()
 
 	return result
+}
+
+// truncateURL shortens a URL for display
+func truncateURL(u string, maxLen int) string {
+	if len(u) <= maxLen {
+		return u
+	}
+	return u[:maxLen-3] + "..."
 }
 
 // GetInterfaceInfo returns information about the bound interface

@@ -8,17 +8,18 @@ import (
 
 // Result contains the complete audit results
 type Result struct {
-	Timestamp time.Time      `json:"timestamp"`
-	TargetURL string         `json:"target_url"`
-	Success   bool           `json:"success"`
-	Error     string         `json:"error,omitempty"`
-	Keytab    *KeytabResult  `json:"keytab,omitempty"`
-	DNS       *DNSResult     `json:"dns,omitempty"`
-	Proxy     *ProxyResult   `json:"proxy,omitempty"`
-	SSL       *SSLResult     `json:"ssl,omitempty"`
-	HTTP      *HTTPResult    `json:"http,omitempty"`
-	Timings   *TimingResult  `json:"timings"`
-	Summary   *SummaryResult `json:"summary"`
+	Timestamp    time.Time      `json:"timestamp"`
+	TargetURL    string         `json:"target_url"`
+	Success      bool           `json:"success"`
+	Error        string         `json:"error,omitempty"`
+	Keytab       *KeytabResult  `json:"keytab,omitempty"`
+	DNS          *DNSResult     `json:"dns,omitempty"`
+	Proxy        *ProxyResult   `json:"proxy,omitempty"`
+	SSL          *SSLResult     `json:"ssl,omitempty"`
+	HTTP         *HTTPResult    `json:"http,omitempty"`
+	PageAnalysis *PageAnalysis  `json:"page_analysis,omitempty"`
+	Timings      *TimingResult  `json:"timings"`
+	Summary      *SummaryResult `json:"summary"`
 }
 
 // ProxyResult contains proxy communication details
@@ -130,6 +131,31 @@ type RedirectInfo struct {
 	StatusCode int               `json:"status_code"`
 	Status     string            `json:"status"`
 	Headers    map[string]string `json:"headers,omitempty"`
+}
+
+// PageResource contains information about a resource fetched from the page
+type PageResource struct {
+	URL           string   `json:"url"`
+	Type          string   `json:"type"` // css, js, image, font, link, other
+	Success       bool     `json:"success"`
+	StatusCode    int      `json:"status_code"`
+	Status        string   `json:"status"`
+	ContentType   string   `json:"content_type,omitempty"`
+	ContentLength int64    `json:"content_length"`
+	Duration      Duration `json:"duration"`
+	Error         string   `json:"error,omitempty"`
+}
+
+// PageAnalysis contains the complete page analysis results
+type PageAnalysis struct {
+	Enabled        bool           `json:"enabled"`
+	TotalResources int            `json:"total_resources"`
+	SuccessCount   int            `json:"success_count"`
+	FailedCount    int            `json:"failed_count"`
+	TotalDuration  Duration       `json:"total_duration"`
+	Resources      []PageResource `json:"resources,omitempty"`
+	SlowestURL     string         `json:"slowest_url,omitempty"`
+	SlowestTime    Duration       `json:"slowest_time,omitempty"`
 }
 
 // TimingResult contains timing breakdown

@@ -57,14 +57,15 @@ func (d Duration) MarshalJSON() ([]byte, error) {
 
 // Config represents the complete audit configuration
 type Config struct {
-	Target  TargetConfig  `json:"target"`
-	Network NetworkConfig `json:"network"`
-	DNS     DNSConfig     `json:"dns"`
-	Proxy   ProxyConfig   `json:"proxy"`
-	Auth    AuthConfig    `json:"auth"`
-	SSL     SSLConfig     `json:"ssl"`
-	HTTP    HTTPConfig    `json:"http"`
-	Output  OutputConfig  `json:"output"`
+	Target       TargetConfig       `json:"target"`
+	Network      NetworkConfig      `json:"network"`
+	DNS          DNSConfig          `json:"dns"`
+	Proxy        ProxyConfig        `json:"proxy"`
+	Auth         AuthConfig         `json:"auth"`
+	SSL          SSLConfig          `json:"ssl"`
+	HTTP         HTTPConfig         `json:"http"`
+	PageAnalysis PageAnalysisConfig `json:"page_analysis"`
+	Output       OutputConfig       `json:"output"`
 }
 
 // TargetConfig defines the target URL and request parameters
@@ -150,6 +151,14 @@ type HTTPConfig struct {
 	XForwardedFor   string `json:"x_forwarded_for"`
 }
 
+// PageAnalysisConfig defines page resource analysis settings
+type PageAnalysisConfig struct {
+	Enabled     bool     `json:"enabled"`
+	Timeout     Duration `json:"timeout"`
+	MaxRequests int      `json:"max_requests"`
+	Types       []string `json:"types"` // css, js, image, font, link
+}
+
 // OutputConfig defines report output paths
 type OutputConfig struct {
 	HTMLPath   string `json:"html_path"`
@@ -214,6 +223,16 @@ func (c *Config) SetDefaults() {
 	}
 	if c.Auth.Kerberos.ServiceName == "" {
 		c.Auth.Kerberos.ServiceName = "HTTP"
+	}
+	// PageAnalysis defaults
+	if c.PageAnalysis.Timeout.Duration == 0 {
+		c.PageAnalysis.Timeout.Duration = 5 * time.Second
+	}
+	if c.PageAnalysis.MaxRequests == 0 {
+		c.PageAnalysis.MaxRequests = 50
+	}
+	if len(c.PageAnalysis.Types) == 0 {
+		c.PageAnalysis.Types = []string{"css", "js", "image", "font", "link"}
 	}
 	if c.Output.HTMLPath == "" {
 		c.Output.HTMLPath = "./report.html"
