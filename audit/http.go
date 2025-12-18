@@ -51,6 +51,37 @@ func (a *HTTPAuditor) SetKerberosAuth(auth *auth.KerberosAuthenticator) {
 	a.kerberosAuth = auth
 }
 
+// redirectCapture wraps a RoundTripper to capture redirect responses
+type redirectCapture struct {
+	transport http.RoundTripper
+	redirects *[]RedirectInfo
+}
+
+func (rc *redirectCapture) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := rc.transport.RoundTrip(req)
+	if err != nil {
+		return resp, err
+	}
+
+	// Capture redirect responses (3xx status codes)
+	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+		location := resp.Header.Get("Location")
+		headers := make(map[string]string)
+		for key, values := range resp.Header {
+			headers[key] = strings.Join(values, ", ")
+		}
+		*rc.redirects = append(*rc.redirects, RedirectInfo{
+			From:       req.URL.String(),
+			To:         location,
+			StatusCode: resp.StatusCode,
+			Status:     resp.Status,
+			Headers:    headers,
+		})
+	}
+
+	return resp, err
+}
+
 // Audit performs the HTTP request and returns results
 func (a *HTTPAuditor) Audit(ctx context.Context) (*HTTPResult, *TimingResult) {
 	result := &HTTPResult{
@@ -64,26 +95,24 @@ func (a *HTTPAuditor) Audit(ctx context.Context) (*HTTPResult, *TimingResult) {
 	// Create transport
 	transport := a.createTransport()
 
+	// Create redirect capture wrapper
+	var redirects []RedirectInfo
+	captureTransport := &redirectCapture{
+		transport: transport,
+		redirects: &redirects,
+	}
+
 	// Create HTTP client
 	client := &http.Client{
-		Transport: transport,
+		Transport: captureTransport,
 		Timeout:   a.cfg.Network.TimeoutTotal.Duration,
 	}
 
 	// Handle redirects
-	var redirects []RedirectInfo
 	if a.cfg.HTTP.FollowRedirects {
 		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			if len(via) >= a.cfg.HTTP.MaxRedirects {
 				return fmt.Errorf("stopped after %d redirects", a.cfg.HTTP.MaxRedirects)
-			}
-			if len(via) > 0 {
-				prev := via[len(via)-1]
-				redirects = append(redirects, RedirectInfo{
-					From:       prev.URL.String(),
-					To:         req.URL.String(),
-					StatusCode: 0, // Will be filled later if possible
-				})
 			}
 			// Re-apply auth headers on redirect
 			a.applyAuthToRequest(req)

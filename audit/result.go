@@ -111,9 +111,11 @@ type HTTPResult struct {
 
 // RedirectInfo contains information about a redirect
 type RedirectInfo struct {
-	From       string `json:"from"`
-	To         string `json:"to"`
-	StatusCode int    `json:"status_code"`
+	From       string            `json:"from"`
+	To         string            `json:"to"`
+	StatusCode int               `json:"status_code"`
+	Status     string            `json:"status"`
+	Headers    map[string]string `json:"headers,omitempty"`
 }
 
 // TimingResult contains timing breakdown

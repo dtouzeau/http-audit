@@ -576,25 +576,24 @@
 
                 {{if .HTTP.Redirects}}
                 <div style="margin-top: 1.5rem;">
-                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">Redirect Chain</h3>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>From</th>
-                                <th>To</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{range $i, $redirect := .HTTP.Redirects}}
-                            <tr>
-                                <td>{{$i}}</td>
-                                <td>{{$redirect.From}}</td>
-                                <td>{{$redirect.To}}</td>
-                            </tr>
-                            {{end}}
-                        </tbody>
-                    </table>
+                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">Redirect Chain ({{len .HTTP.Redirects}} redirect{{if gt (len .HTTP.Redirects) 1}}s{{end}})</h3>
+                    {{range $i, $redirect := .HTTP.Redirects}}
+                    <div class="cert-card" style="margin-bottom: 1rem;">
+                        <div class="cert-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Redirect #{{$i}} → {{$redirect.StatusCode}} {{$redirect.Status}}</span>
+                            <span class="tag tag-warning">{{$redirect.StatusCode}}</span>
+                        </div>
+                        <div class="cert-detail"><strong>From:</strong> {{$redirect.From}}</div>
+                        <div class="cert-detail"><strong>To:</strong> {{$redirect.To}}</div>
+                        {{if $redirect.Headers}}
+                        <div style="margin-top: 0.75rem;">
+                            <div class="cert-detail"><strong>Response Headers:</strong></div>
+                            <div class="code-block" style="max-height: 150px; overflow-y: auto; margin-top: 0.25rem; font-size: 0.75rem;">{{range $key, $value := $redirect.Headers}}{{$key}}: {{$value}}
+{{end}}</div>
+                        </div>
+                        {{end}}
+                    </div>
+                    {{end}}
                 </div>
                 {{end}}
 
