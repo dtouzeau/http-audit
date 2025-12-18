@@ -27,6 +27,24 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 		if err != nil {
 			return fmt.Errorf("invalid duration %q: %w", value, err)
 		}
+	case map[string]interface{}:
+		// Handle object format: {"Duration": 10000000000}
+		if dur, ok := value["Duration"]; ok {
+			switch durVal := dur.(type) {
+			case float64:
+				d.Duration = time.Duration(durVal)
+			case string:
+				var err error
+				d.Duration, err = time.ParseDuration(durVal)
+				if err != nil {
+					return fmt.Errorf("invalid duration %q: %w", durVal, err)
+				}
+			default:
+				return fmt.Errorf("invalid Duration field type: %T", dur)
+			}
+		} else {
+			return fmt.Errorf("missing Duration field in object")
+		}
 	default:
 		return fmt.Errorf("invalid duration type: %T", v)
 	}
