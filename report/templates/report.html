@@ -663,11 +663,91 @@
         </div>
         {{end}}
 
+        {{if and .PageAnalysis .PageAnalysis.Enabled}}
+        <!-- Complete Page Analysis -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Complete Page Analysis</h2>
+                <span class="tag tag-info">{{.PageAnalysis.TotalResources}} resources</span>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-4" style="margin-bottom: 1.5rem;">
+                    <div class="stat-card">
+                        <div class="stat-value">{{.PageAnalysis.TotalResources}}</div>
+                        <div class="stat-label">Total Resources</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: var(--success-color)">{{.PageAnalysis.SuccessCount}}</div>
+                        <div class="stat-label">Successful</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: var(--error-color)">{{.PageAnalysis.FailedCount}}</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{printf "%.0f" .PageAnalysis.TotalDuration.Milliseconds}}ms</div>
+                        <div class="stat-label">Total Time</div>
+                    </div>
+                </div>
+
+                {{if .PageAnalysis.Resources}}
+                <!-- Resource Performance Chart (Top 10 slowest) -->
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">Resource Performance (Top 10 Slowest)</h3>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="resourceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Resource Table -->
+                <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">All Resources ({{len .PageAnalysis.Resources}} URLs)</h3>
+                <div style="max-height: 600px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0.5rem;">
+                    <table class="table">
+                        <thead style="position: sticky; top: 0; background: var(--card-bg); z-index: 1;">
+                            <tr>
+                                <th style="width: 80px;">Type</th>
+                                <th>URL</th>
+                                <th style="width: 80px;">Status</th>
+                                <th style="width: 80px;">Size</th>
+                                <th style="width: 80px;">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range $i, $res := .PageAnalysis.Resources}}
+                            <tr>
+                                <td><span class="tag tag-info">{{$res.Type}}</span></td>
+                                <td style="word-break: break-all; font-family: monospace; font-size: 0.8rem;">{{$res.URL}}</td>
+                                <td>
+                                    {{if $res.Success}}
+                                    <span class="tag tag-success">{{$res.StatusCode}}</span>
+                                    {{else}}
+                                    <span class="tag tag-error">{{if $res.StatusCode}}{{$res.StatusCode}}{{else}}Error{{end}}</span>
+                                    {{end}}
+                                </td>
+                                <td>{{if gt $res.ContentLength 0}}{{$res.ContentLength}}{{else}}-{{end}}</td>
+                                <td>{{printf "%.0f" $res.Duration.Milliseconds}}ms</td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Full URL List (Plain Text) -->
+                <div style="margin-top: 1.5rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.75rem;">All Fetched URLs (Copy-friendly)</h3>
+                    <div class="code-block" style="max-height: 300px; overflow-y: auto; font-size: 0.75rem;">{{range $i, $res := .PageAnalysis.Resources}}[{{$res.Type}}] {{if $res.Success}}✓{{else}}✗{{end}} {{$res.StatusCode}} {{$res.URL}}
+{{end}}</div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+
         {{if .Keytab}}
         <!-- Keytab Results -->
         <div class="card">
             <div class="card-header">
-                <h2>Kerberos Keytab</h2>
+                <h2>Kerberos Keytab (Target Auth)</h2>
                 <span class="tag {{if .Keytab.Success}}tag-success{{else}}tag-error{{end}}">
                     {{if .Keytab.Success}}{{if .Keytab.Generated}}Generated{{else}}Existing{{end}}{{else}}Failed{{end}}
                 </span>
@@ -690,6 +770,40 @@
                     <tr>
                         <th>Error</th>
                         <td style="color: var(--error-color)">{{.Keytab.Error}}</td>
+                    </tr>
+                    {{end}}
+                </table>
+            </div>
+        </div>
+        {{end}}
+
+        {{if .ProxyKeytab}}
+        <!-- Proxy Keytab Results -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Kerberos Keytab (Proxy Auth)</h2>
+                <span class="tag {{if .ProxyKeytab.Success}}tag-success{{else}}tag-error{{end}}">
+                    {{if .ProxyKeytab.Success}}{{if .ProxyKeytab.Generated}}Generated{{else}}Existing{{end}}{{else}}Failed{{end}}
+                </span>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <th>Principal</th>
+                        <td>{{.ProxyKeytab.Principal}}</td>
+                    </tr>
+                    <tr>
+                        <th>Path</th>
+                        <td><code>{{.ProxyKeytab.Path}}</code></td>
+                    </tr>
+                    <tr>
+                        <th>Duration</th>
+                        <td>{{printf "%.2f" .ProxyKeytab.Duration.Milliseconds}}ms</td>
+                    </tr>
+                    {{if .ProxyKeytab.Error}}
+                    <tr>
+                        <th>Error</th>
+                        <td style="color: var(--error-color)">{{.ProxyKeytab.Error}}</td>
                     </tr>
                     {{end}}
                 </table>
@@ -857,6 +971,73 @@
                             callback: function(value) {
                                 return value === 1 ? 'Supported' : 'Not Supported';
                             }
+                        }
+                    }
+                }
+            }
+        });
+        {{end}}
+
+        {{if and .PageAnalysis .PageAnalysis.Resources}}
+        // Resource Performance Chart (Top 10 Slowest)
+        const resourceCtx = document.getElementById('resourceChart').getContext('2d');
+        const resourceData = [
+            {{range $i, $res := .PageAnalysis.Resources}}{{if lt $i 10}}{
+                url: '{{js $res.URL}}',
+                type: '{{$res.Type}}',
+                time: {{printf "%.2f" $res.Duration.Milliseconds}},
+                success: {{$res.Success}}
+            },{{end}}{{end}}
+        ];
+
+        // Truncate URLs for display
+        const truncateUrl = (url, maxLen) => {
+            if (url.length <= maxLen) return url;
+            return url.substring(0, maxLen - 3) + '...';
+        };
+
+        new Chart(resourceCtx, {
+            type: 'bar',
+            data: {
+                labels: resourceData.map(r => truncateUrl(r.url.split('/').pop() || r.url, 30)),
+                datasets: [{
+                    label: 'Load Time (ms)',
+                    data: resourceData.map(r => r.time),
+                    backgroundColor: resourceData.map(r => r.success ? 'rgba(59, 130, 246, 0.8)' : 'rgba(239, 68, 68, 0.8)'),
+                    borderColor: resourceData.map(r => r.success ? 'rgba(59, 130, 246, 1)' : 'rgba(239, 68, 68, 1)'),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                return resourceData[context[0].dataIndex].url;
+                            },
+                            label: function(context) {
+                                const r = resourceData[context.dataIndex];
+                                return [
+                                    'Time: ' + r.time.toFixed(2) + ' ms',
+                                    'Type: ' + r.type,
+                                    'Status: ' + (r.success ? 'Success' : 'Failed')
+                                ];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Load Time (ms)'
                         }
                     }
                 }
