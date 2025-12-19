@@ -244,7 +244,7 @@ func (c *Config) SetDefaults() {
 		c.PageAnalysis.MaxRequests = 50
 	}
 	if len(c.PageAnalysis.Types) == 0 {
-		c.PageAnalysis.Types = []string{"css", "js", "image", "font", "link"}
+		c.PageAnalysis.Types = []string{"css", "js", "image", "font", "link", "media"}
 	}
 	if c.Output.HTMLPath == "" {
 		c.Output.HTMLPath = "./report.html"
