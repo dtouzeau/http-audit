@@ -177,3 +177,103 @@ func GetCurrentTickets() (string, error) {
 	}
 	return string(output), nil
 }
+
+// ProxyKeytabGenerator generates Kerberos keytab files for proxy authentication
+type ProxyKeytabGenerator struct {
+	cfg *config.ProxyKerberosConfig
+}
+
+// NewProxyKeytabGenerator creates a new proxy keytab generator
+func NewProxyKeytabGenerator(cfg *config.ProxyKerberosConfig) *ProxyKeytabGenerator {
+	return &ProxyKeytabGenerator{cfg: cfg}
+}
+
+// Generate creates a keytab file from proxy kerberos credentials
+func (g *ProxyKeytabGenerator) Generate() *KeytabResult {
+	result := &KeytabResult{
+		Path:      g.cfg.KeytabPath,
+		Principal: g.cfg.Username,
+	}
+
+	start := time.Now()
+
+	// Check if keytab already exists and generation is not forced
+	if !g.cfg.GenerateKeytab {
+		if _, err := os.Stat(g.cfg.KeytabPath); err == nil {
+			result.Success = true
+			result.Generated = false
+			result.Duration = time.Since(start)
+			return result
+		}
+	}
+
+	// Ensure the keytab directory exists
+	keytabDir := filepath.Dir(g.cfg.KeytabPath)
+	if err := os.MkdirAll(keytabDir, 0700); err != nil {
+		result.Success = false
+		result.Error = fmt.Sprintf("failed to create keytab directory: %v", err)
+		result.Duration = time.Since(start)
+		return result
+	}
+
+	// Remove existing keytab if it exists
+	if _, err := os.Stat(g.cfg.KeytabPath); err == nil {
+		if err := os.Remove(g.cfg.KeytabPath); err != nil {
+			result.Success = false
+			result.Error = fmt.Sprintf("failed to remove existing keytab: %v", err)
+			result.Duration = time.Since(start)
+			return result
+		}
+	}
+
+	// Generate keytab using ktutil
+	err := g.runKtutil()
+	result.Duration = time.Since(start)
+
+	if err != nil {
+		result.Success = false
+		result.Error = err.Error()
+		return result
+	}
+
+	// Verify keytab was created
+	if _, err := os.Stat(g.cfg.KeytabPath); os.IsNotExist(err) {
+		result.Success = false
+		result.Error = "keytab file was not created"
+		return result
+	}
+
+	result.Success = true
+	result.Generated = true
+	result.GeneratedAt = time.Now()
+	return result
+}
+
+// runKtutil executes ktutil to generate the keytab for proxy auth
+func (g *ProxyKeytabGenerator) runKtutil() error {
+	// Build the principal name
+	principal := g.cfg.Username
+	if !strings.Contains(principal, "@") && g.cfg.Realm != "" {
+		principal = principal + "@" + g.cfg.Realm
+	}
+
+	// Create ktutil commands
+	// ktutil expects interactive input, so we'll pipe commands to it
+	commands := fmt.Sprintf(`add_entry -password -p %s -k 1 -e aes256-cts-hmac-sha1-96
+%s
+add_entry -password -p %s -k 1 -e aes128-cts-hmac-sha1-96
+%s
+write_kt %s
+quit
+`, principal, g.cfg.Password, principal, g.cfg.Password, g.cfg.KeytabPath)
+
+	cmd := exec.Command("ktutil")
+	cmd.Stdin = strings.NewReader(commands)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ktutil failed: %v, output: %s", err, string(output))
+	}
+
+	return nil
+}

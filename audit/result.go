@@ -13,6 +13,7 @@ type Result struct {
 	Success      bool           `json:"success"`
 	Error        string         `json:"error,omitempty"`
 	Keytab       *KeytabResult  `json:"keytab,omitempty"`
+	ProxyKeytab  *KeytabResult  `json:"proxy_keytab,omitempty"`
 	DNS          *DNSResult     `json:"dns,omitempty"`
 	Proxy        *ProxyResult   `json:"proxy,omitempty"`
 	SSL          *SSLResult     `json:"ssl,omitempty"`
@@ -229,13 +230,25 @@ func (r *Result) CalculateSummary() {
 	r.Summary.FailedSteps = 0
 	r.Summary.Warnings = []string{}
 
-	// Count keytab step
+	// Count keytab step (target auth)
 	if r.Keytab != nil {
 		r.Summary.TotalSteps++
 		if r.Keytab.Success {
 			r.Summary.SuccessSteps++
 		} else {
 			r.Summary.FailedSteps++
+			r.Summary.Warnings = append(r.Summary.Warnings, "Target Kerberos keytab generation failed: "+r.Keytab.Error)
+		}
+	}
+
+	// Count proxy keytab step
+	if r.ProxyKeytab != nil {
+		r.Summary.TotalSteps++
+		if r.ProxyKeytab.Success {
+			r.Summary.SuccessSteps++
+		} else {
+			r.Summary.FailedSteps++
+			r.Summary.Warnings = append(r.Summary.Warnings, "Proxy Kerberos keytab generation failed: "+r.ProxyKeytab.Error)
 		}
 	}
 

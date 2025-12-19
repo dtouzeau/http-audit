@@ -103,6 +103,41 @@ func (a *Auditor) Run(ctx context.Context) *Result {
 		defer kerberosAuth.Close()
 	}
 
+	// Step 1b: Generate proxy keytab if needed
+	if a.cfg.Proxy.Enabled && a.cfg.Proxy.Auth.Type == "kerberos" && a.cfg.Proxy.Auth.Kerberos.GenerateKeytab {
+		fmt.Println("Generating proxy Kerberos keytab...")
+		proxyKeytabGen := auth.NewProxyKeytabGenerator(&a.cfg.Proxy.Auth.Kerberos)
+		proxyKeytabResult := proxyKeytabGen.Generate()
+
+		// Convert auth.KeytabResult to audit.KeytabResult
+		result.ProxyKeytab = &KeytabResult{
+			Success:     proxyKeytabResult.Success,
+			Generated:   proxyKeytabResult.Generated,
+			Path:        proxyKeytabResult.Path,
+			Principal:   proxyKeytabResult.Principal,
+			Error:       proxyKeytabResult.Error,
+			Duration:    Duration{proxyKeytabResult.Duration},
+			GeneratedAt: proxyKeytabResult.GeneratedAt,
+		}
+
+		if !result.ProxyKeytab.Success {
+			fmt.Printf("Proxy keytab generation failed: %s\n", result.ProxyKeytab.Error)
+			result.SetError(fmt.Errorf("proxy keytab generation failed: %s", result.ProxyKeytab.Error))
+			result.CalculateSummary()
+			return result
+		}
+		fmt.Printf("Proxy keytab generated successfully at %s\n", result.ProxyKeytab.Path)
+
+		// Initialize proxy kerberos auth now that keytab is ready
+		if err := a.proxyConfig.InitKerberosAuth(); err != nil {
+			result.ProxyKeytab.Success = false
+			result.ProxyKeytab.Error = fmt.Sprintf("kerberos initialization failed: %v", err)
+			result.SetError(fmt.Errorf("proxy kerberos initialization failed: %w", err))
+			result.CalculateSummary()
+			return result
+		}
+	}
+
 	// Step 2: Proxy info (if enabled)
 	if a.cfg.Proxy.Enabled {
 		result.Proxy = &ProxyResult{
@@ -114,6 +149,8 @@ func (a *Auditor) Run(ctx context.Context) *Result {
 		}
 		fmt.Printf("Using proxy: %s\n", a.cfg.Proxy.URL)
 		fmt.Println("DNS resolution skipped (proxy handles DNS)")
+		// Clean up proxy kerberos client if used
+		defer a.proxyConfig.Close()
 	}
 
 	// Step 3: DNS Resolution (skip if proxy is enabled - proxy handles DNS)

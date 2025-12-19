@@ -164,7 +164,11 @@ func (a *HTTPAuditor) Audit(ctx context.Context) (*HTTPResult, *TimingResult) {
 
 	// Apply proxy auth
 	if a.proxyConfig != nil {
-		a.proxyConfig.ApplyToRequest(req)
+		if err := a.proxyConfig.ApplyToRequest(req); err != nil {
+			result.Success = false
+			result.Error = fmt.Sprintf("failed to apply proxy authentication: %v", err)
+			return result, timings
+		}
 	}
 
 	// Record request headers

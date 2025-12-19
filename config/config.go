@@ -102,9 +102,21 @@ type ProxyConfig struct {
 
 // ProxyAuthConfig defines proxy authentication
 type ProxyAuthConfig struct {
-	Type     string `json:"type"` // none, basic
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Type     string              `json:"type"` // none, basic, kerberos
+	Username string              `json:"username"`
+	Password string              `json:"password"`
+	Kerberos ProxyKerberosConfig `json:"kerberos,omitempty"`
+}
+
+// ProxyKerberosConfig defines Kerberos authentication settings for proxy
+type ProxyKerberosConfig struct {
+	Username       string `json:"username,omitempty"`
+	Password       string `json:"password,omitempty"`
+	KDCServer      string `json:"kdc_server,omitempty"`
+	Realm          string `json:"realm,omitempty"`
+	KeytabPath     string `json:"keytab_path,omitempty"`
+	GenerateKeytab bool   `json:"generate_keytab,omitempty"`
+	ServiceName    string `json:"service_name,omitempty"`
 }
 
 // AuthConfig defines target authentication settings
